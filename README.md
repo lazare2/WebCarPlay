@@ -36,13 +36,24 @@ Live: <https://lazare2.github.io/WebCarPlay/>
 
 | Platform | Result |
 |---|---|
-| Android Chrome, desktop browsers, iPadOS Safari | Button works — true fullscreen |
-| **iPhone Safari** | **Button is hidden — iOS has no Fullscreen API for web pages** |
+| Android — Chrome, Firefox, Samsung Internet, Edge | Button works — true fullscreen |
+| Desktop browsers, iPadOS Safari | Button works |
+| **iPhone — every browser, not just Safari** | **Button is hidden** |
 
-On iPhone the equivalent is **Share → Add to Home Screen**, then launch from that
-icon: `apple-mobile-web-app-capable` makes it open standalone with no browser UI
-at all. The app detects standalone mode and hides the fullscreen button there too,
-since there's nothing left to hide.
+The iPhone row covers Chrome, Firefox, Edge and Brave as well as Safari: Apple
+requires every iOS browser to run on WebKit, so they all inherit the same gap.
+Those apps are Safari's engine in a different wrapper, and none of them exposes
+the Fullscreen API for pages.
+
+On iPhone the equivalent is **Share → Add to Home Screen from Safari**, then launch
+from that icon: `apple-mobile-web-app-capable` makes it open standalone with no
+browser UI at all. Do the install from Safari specifically — third-party iOS
+browsers don't reliably produce a standalone web clip.
+
+The button is shown purely on capability detection, never user-agent sniffing, so
+it appears by itself if a browser gains support. It stays available inside an
+installed PWA too: on Android, standalone mode still shows the system status bar,
+and fullscreen hides that as well.
 
 ### Changing the app after deploy
 

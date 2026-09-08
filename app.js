@@ -231,11 +231,17 @@ function showTab(name) {
 
    Uses the Fullscreen API, with the older webkit-prefixed names for Safari.
 
-   Reality check: iPhone Safari does NOT implement the Fullscreen API at all,
-   so there is nothing to call there — the button hides itself. On iPhone the
-   equivalent is Add to Home Screen, which launches standalone with no browser
-   chrome (see the note in Settings). Works on Android Chrome, desktop
-   browsers, and iPadOS Safari.
+   Reality check: iOS does NOT implement the Fullscreen API for pages, and every
+   browser on iPhone (Chrome, Firefox, Edge, Brave...) is required to use Apple's
+   WebKit, so they all inherit that gap — the button hides itself on all of them.
+   On iPhone the equivalent is Add to Home Screen from Safari, which launches
+   standalone with no browser chrome (see the note in Settings).
+
+   Works on Android (Chrome, Firefox, Samsung Internet, Edge), desktop browsers,
+   and iPadOS Safari.
+
+   Detection is by capability, never by user agent, so a browser that gains
+   support later picks the button up with no change here.
    -------------------------------------------------------------------------- */
 function fsElement() {
   return document.fullscreenElement || document.webkitFullscreenElement || null;
@@ -248,12 +254,6 @@ function fsSupported() {
     ? document.fullscreenEnabled
     : document.webkitFullscreenEnabled;
   return enabled !== false;             // undefined but callable -> let it try
-}
-
-// Already launched from the home screen / installed? Then there's no chrome to hide.
-function isStandalone() {
-  if (window.navigator.standalone === true) return true;
-  return !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
 }
 
 function toggleFullscreen() {
@@ -422,6 +422,8 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
   showTab(load(KEY.tab, 'video') === 'music' ? 'music' : 'video');
 
   // Only offer the fullscreen button where it can actually do something.
-  $('fsBtn').hidden = !(fsSupported() && !isStandalone());
+  // Note this stays available in an installed PWA: on Android, standalone mode
+  // still shows the system status bar, and fullscreen hides that too.
+  $('fsBtn').hidden = !fsSupported();
   syncFsButton();
 })();
