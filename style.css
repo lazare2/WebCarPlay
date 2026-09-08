@@ -1,0 +1,260 @@
+/* ==========================================================================
+   WebCarPlay — landscape-first in-car dashboard
+   Dark, high contrast, large tap targets (min 48px), no page scrolling.
+   ========================================================================== */
+
+:root {
+  --bg:        #06080a;
+  --panel:     #12161c;
+  --panel-2:   #1b212a;
+  --line:      #2b333f;
+  --text:      #f2f5f8;
+  --muted:     #9aa7b6;
+  --accent:    #35c5ff;
+  --accent-ink:#04121a;
+  --waze:      #33ccff;
+  --warn:      #ffb454;
+
+  --gap: 10px;
+  --tap: 52px;            /* minimum tap target */
+  --radius: 14px;
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;                 /* no scrolling — this is a fixed dashboard */
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  height: 100vh;
+  height: 100dvh;                   /* dvh keeps it correct while iOS Safari's bars animate */
+  display: flex;
+  flex-direction: column;
+  padding: var(--gap);
+  padding-left: calc(var(--gap) + var(--safe-l));
+  padding-right: calc(var(--gap) + var(--safe-r));
+  padding-bottom: calc(var(--gap) + var(--safe-b));
+  gap: var(--gap);
+}
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.brand span { color: var(--accent); }
+
+/* ---------- Buttons & fields ---------- */
+
+.btn {
+  min-height: var(--tap);
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-go   { background: var(--accent); color: var(--accent-ink); }
+.btn-waze { background: var(--waze);   color: var(--accent-ink); }
+
+.field {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 0 16px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: #0a0e13;
+  color: var(--text);
+  font-size: 17px;                  /* >=16px so iOS doesn't zoom on focus */
+  font-weight: 600;
+}
+.field::placeholder { color: var(--muted); font-weight: 500; }
+.field:focus { outline: none; border-color: var(--accent); }
+
+/* ---------- Deck: the two panels ---------- */
+
+.deck {
+  flex: 1 1 auto;
+  min-height: 0;                    /* lets the iframes shrink instead of overflowing */
+  display: flex;
+  gap: var(--gap);
+}
+
+.panel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.panel-map   { flex: 55 1 0; }      /* ~55 / 45 split */
+.panel-media { flex: 45 1 0; }
+
+.bar {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+}
+
+.frame {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+.frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.empty {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+  pointer-events: none;
+}
+.empty[hidden] { display: none; }
+
+.status {
+  flex: 0 0 auto;
+  margin: 0;
+  min-height: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--warn);
+}
+.status:empty { display: none; }
+
+.note {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+}
+.tab {
+  flex: 1 1 0;
+  min-height: var(--tap);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.tab.is-active {
+  background: var(--panel-2);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* Panes stay in the DOM and keep playing; the inactive one is parked off-screen
+   rather than display:none so audio isn't torn down when you switch tabs. */
+.pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pane.is-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.panel-media { position: relative; }
+
+/* ---------- Portrait fallback ---------- */
+
+.rotate-hint {
+  display: none;
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--warn);
+  color: #1a1204;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (orientation: portrait) {
+  .rotate-hint { display: block; }
+  .deck { flex-direction: column; }   /* stack the panels vertically */
+  .panel-map, .panel-media { flex: 1 1 0; }
+  .note { display: none; }            /* keep the stacked layout from overflowing */
+}
+
+/* Very short landscape (phone on its side): trim vertical chrome */
+@media (orientation: landscape) and (max-height: 420px) {
+  :root { --tap: 46px; --gap: 8px; }
+  .brand { font-size: 17px; }
+  .note { font-size: 12px; }
+}

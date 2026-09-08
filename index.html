@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0d10">
+<title>WebCarPlay</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Shown only in portrait orientation (CSS-driven; iOS Safari can't force landscape) -->
+  <div class="rotate-hint" role="status">Rotate your phone to landscape for the full dashboard</div>
+
+  <header class="topbar">
+    <div class="brand">Web<span>CarPlay</span></div>
+    <a id="wazeBtn" class="btn btn-waze" href="https://waze.com/ul" target="_blank" rel="noopener">
+      Navigate in Waze
+    </a>
+  </header>
+
+  <main class="deck">
+
+    <!-- ============ LEFT: MAP ============ -->
+    <section class="panel panel-map">
+      <form class="bar" id="mapForm" autocomplete="off">
+        <input id="destInput" class="field" type="text" inputmode="text"
+               placeholder="Destination address or lat,lon" aria-label="Destination">
+        <button class="btn btn-go" type="submit">Go</button>
+      </form>
+      <p class="status" id="mapStatus" aria-live="polite"></p>
+      <div class="frame">
+        <iframe id="mapFrame" title="Map"
+                referrerpolicy="no-referrer-when-downgrade"
+                allow="geolocation" loading="lazy"></iframe>
+      </div>
+    </section>
+
+    <!-- ============ RIGHT: VIDEO / MUSIC ============ -->
+    <section class="panel panel-media">
+      <div class="tabs" role="tablist">
+        <button class="tab is-active" role="tab" data-tab="video" aria-selected="true">Video</button>
+        <button class="tab" role="tab" data-tab="music" aria-selected="false">Music</button>
+      </div>
+
+      <!-- Video tab -->
+      <div class="pane" id="pane-video" role="tabpanel">
+        <form class="bar" id="ytForm" autocomplete="off">
+          <input id="ytInput" class="field" type="url" inputmode="url"
+                 placeholder="Paste a YouTube link" aria-label="YouTube URL">
+          <button class="btn btn-go" type="submit">Play</button>
+        </form>
+        <p class="status" id="ytStatus" aria-live="polite"></p>
+        <div class="frame">
+          <iframe id="ytFrame" title="Video"
+                  allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+                  allowfullscreen></iframe>
+          <p class="empty" id="ytEmpty">Paste any YouTube link above.</p>
+        </div>
+      </div>
+
+      <!-- Music tab -->
+      <div class="pane is-hidden" id="pane-music" role="tabpanel">
+        <form class="bar" id="spForm" autocomplete="off">
+          <input id="spInput" class="field" type="url" inputmode="url"
+                 placeholder="Paste a Spotify track / playlist / album link" aria-label="Spotify URL">
+          <button class="btn btn-go" type="submit">Play</button>
+        </form>
+        <p class="status" id="spStatus" aria-live="polite"></p>
+        <div class="frame">
+          <iframe id="spFrame" title="Music"
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"></iframe>
+          <p class="empty" id="spEmpty">Paste any open.spotify.com link above.</p>
+        </div>
+        <p class="note">Spotify embeds sometimes only play 30-second previews unless you're logged into Spotify in this same browser.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
