@@ -258,3 +258,102 @@ body {
   .brand { font-size: 17px; }
   .note { font-size: 12px; }
 }
+
+/* ==========================================================================
+   Phase 2 — icon buttons, fullscreen, settings
+   ========================================================================== */
+
+.icon-btn {
+  flex: 0 0 auto;
+  width: var(--tap);
+  padding: 0;
+}
+.icon-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Swap expand/collapse glyphs via a class rather than the hidden attribute,
+   which browsers apply inconsistently to inline SVG children. */
+.icon-btn .fs-collapse { display: none; }
+.icon-btn.is-on .fs-expand { display: none; }
+.icon-btn.is-on .fs-collapse { display: inline; }
+
+.topbar .brand { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.topbar .btn-waze { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+
+/* ---------- Settings modal ---------- */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.72);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+.modal[hidden] { display: none; }
+
+.modal-card {
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow-y: auto;              /* the one place scrolling is allowed */
+  -webkit-overflow-scrolling: touch;
+  padding: 18px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.modal-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+.modal-actions .btn { flex: 1 1 auto; }
+
+.note-sep {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.note strong { color: var(--text); }
+
+.status-ok { color: var(--accent); }
+
+/* Keep the modal usable on a short landscape phone */
+@media (orientation: landscape) and (max-height: 460px) {
+  .modal { padding: 8px; }
+  .modal-card { padding: 12px; gap: 8px; }
+  .modal-title { font-size: 17px; }
+}
+
+/* Narrow screens: shrink the Waze label so the icon buttons always fit */
+@media (max-width: 640px) {
+  .topbar .btn-waze { padding: 0 14px; font-size: 15px; }
+  .brand { font-size: 16px; }
+}

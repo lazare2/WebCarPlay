@@ -6,7 +6,12 @@
 /* --------------------------------------------------------------------------
    GOOGLE MAPS API KEY (optional)
 
-   Leave this empty and the map still works: we fall back to the keyless
+   Preferred way to set this: the in-app Settings (gear icon), which stores the
+   key in localStorage on your device only — nothing to commit, so the repo
+   stays clean now that it's public.
+
+   This constant is the fallback for a hardcoded key. Leave it empty and the
+   map still works: we fall back to the keyless
    https://www.google.com/maps?q=...&output=embed URL, which shows the place
    but gives you no directions embed and no usage quota of your own.
 
@@ -14,14 +19,13 @@
      1. https://console.cloud.google.com  ->  create (or pick) a project
      2. APIs & Services -> Library -> enable "Maps Embed API"
      3. APIs & Services -> Credentials -> Create credentials -> API key
-     4. Restrict the key: Application restrictions -> Websites -> add the
-        domain you deploy to (and http://localhost for local testing),
+     4. Restrict the key: Application restrictions -> Websites ->
+        https://lazare2.github.io/* (and http://localhost:* for local testing),
         and API restrictions -> Maps Embed API only.
-     5. Paste it below.
+     5. Paste it into Settings in the app.
 
-   NOTE: a browser API key is always visible in page source. Restricting it to
-   your domain + the Maps Embed API is what keeps it safe. Phase 2 moves this
-   into localStorage via a settings panel so it stays out of the repo.
+   NOTE: a browser API key is always visible to anyone using the page. The
+   domain + API restriction is what keeps it from being abused.
    -------------------------------------------------------------------------- */
 const GOOGLE_MAPS_API_KEY = '';
 
@@ -32,7 +36,8 @@ const KEY = {
   dest:    'webcarplay.dest',
   youtube: 'webcarplay.youtube',
   spotify: 'webcarplay.spotify',
-  tab:     'webcarplay.tab'
+  tab:     'webcarplay.tab',
+  mapskey: 'webcarplay.mapskey'
 };
 
 function load(k, fallback) {
@@ -49,11 +54,20 @@ function save(k, v) {
   try { localStorage.setItem(k, v); } catch (e) { /* private mode / storage full */ }
 }
 
+function drop(k) {
+  try { localStorage.removeItem(k); } catch (e) { /* ignore */ }
+}
+
 function $(id) { return document.getElementById(id); }
 
 /* --------------------------------------------------------------------------
    MAP
    -------------------------------------------------------------------------- */
+
+// A key saved in Settings wins over the hardcoded constant above.
+function mapsKey() {
+  return load(KEY.mapskey).trim() || GOOGLE_MAPS_API_KEY;
+}
 
 // "41.7151, 44.8271" -> ["41.7151", "44.8271"], otherwise null
 function parseLatLon(s) {
@@ -65,10 +79,11 @@ function parseLatLon(s) {
 
 function mapUrl(query) {
   var q = encodeURIComponent(query);
-  if (GOOGLE_MAPS_API_KEY) {
+  var key = mapsKey();
+  if (key) {
     // Maps Embed API — /place. Swap to /directions?origin=..&destination=..
     // once you want a full route drawn inside the embed.
-    return 'https://www.google.com/maps/embed/v1/place?key=' + GOOGLE_MAPS_API_KEY + '&q=' + q;
+    return 'https://www.google.com/maps/embed/v1/place?key=' + encodeURIComponent(key) + '&q=' + q;
   }
   // Keyless fallback — limited, but needs no Google Cloud project at all.
   return 'https://www.google.com/maps?q=' + q + '&output=embed';
@@ -78,11 +93,17 @@ function setMap(query, persist) {
   var dest = String(query).trim();
   if (!dest) return;
   $('mapFrame').src = mapUrl(dest);
-  $('mapStatus').textContent = GOOGLE_MAPS_API_KEY
+  $('mapStatus').textContent = mapsKey()
     ? ''
     : 'No API key set — using the basic keyless map embed.';
   updateWaze(dest);
   if (persist !== false) save(KEY.dest, dest);
+}
+
+// Re-render the map with whatever key is current (called after Settings changes).
+function refreshMap() {
+  var dest = $('destInput').value.trim() || load(KEY.dest);
+  if (dest) setMap(dest, false);
 }
 
 /* --------------------------------------------------------------------------
@@ -206,6 +227,116 @@ function showTab(name) {
 }
 
 /* --------------------------------------------------------------------------
+   FULLSCREEN
+
+   Uses the Fullscreen API, with the older webkit-prefixed names for Safari.
+
+   Reality check: iPhone Safari does NOT implement the Fullscreen API at all,
+   so there is nothing to call there — the button hides itself. On iPhone the
+   equivalent is Add to Home Screen, which launches standalone with no browser
+   chrome (see the note in Settings). Works on Android Chrome, desktop
+   browsers, and iPadOS Safari.
+   -------------------------------------------------------------------------- */
+function fsElement() {
+  return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+function fsSupported() {
+  var el = document.documentElement;
+  if (!(el.requestFullscreen || el.webkitRequestFullscreen)) return false;
+  var enabled = (document.fullscreenEnabled !== undefined)
+    ? document.fullscreenEnabled
+    : document.webkitFullscreenEnabled;
+  return enabled !== false;             // undefined but callable -> let it try
+}
+
+// Already launched from the home screen / installed? Then there's no chrome to hide.
+function isStandalone() {
+  if (window.navigator.standalone === true) return true;
+  return !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+
+function toggleFullscreen() {
+  var el = document.documentElement;
+  try {
+    if (fsElement()) {
+      var exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) {
+        var r = exit.call(document);
+        if (r && r.catch) r.catch(function () {});
+      }
+    } else {
+      var enter = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (enter) {
+        var p = enter.call(el);
+        if (p && p.catch) p.catch(function () {});
+      }
+    }
+  } catch (e) { /* user gesture rejected / not permitted */ }
+}
+
+function syncFsButton() {
+  var btn = $('fsBtn');
+  var on = !!fsElement();
+  btn.classList.toggle('is-on', on);
+  btn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Enter fullscreen');
+  btn.title = on ? 'Exit fullscreen' : 'Fullscreen';
+}
+
+/* --------------------------------------------------------------------------
+   SETTINGS
+   -------------------------------------------------------------------------- */
+function maskKey(k) {
+  if (k.length <= 6) return '••••';
+  return '••••' + k.slice(-4);
+}
+
+function refreshKeyStatus() {
+  var saved = load(KEY.mapskey).trim();
+  var el = $('keyStatus');
+  if (saved) {
+    el.textContent = 'Key saved on this device (' + maskKey(saved) + ') — Maps Embed API in use.';
+  } else if (GOOGLE_MAPS_API_KEY) {
+    el.textContent = 'Using the key hardcoded in app.js.';
+  } else {
+    el.textContent = 'No key — using the basic keyless map embed.';
+  }
+}
+
+function openSettings() {
+  $('keyInput').value = load(KEY.mapskey);
+  refreshKeyStatus();
+  $('settings').hidden = false;
+}
+
+function closeSettings() {
+  $('settings').hidden = true;
+}
+
+function saveKey() {
+  var v = $('keyInput').value.trim();
+  if (v) {
+    save(KEY.mapskey, v);
+  } else {
+    drop(KEY.mapskey);
+  }
+  refreshMap();
+  refreshKeyStatus();
+  // Google browser keys look like AIza… — warn but don't block, in case the
+  // format ever changes.
+  if (v && v.indexOf('AIza') !== 0) {
+    $('keyStatus').textContent += ' (Heads up: Google keys usually start with "AIza".)';
+  }
+}
+
+function clearKey() {
+  drop(KEY.mapskey);
+  $('keyInput').value = '';
+  refreshMap();
+  refreshKeyStatus();
+}
+
+/* --------------------------------------------------------------------------
    WIRING
    -------------------------------------------------------------------------- */
 $('mapForm').addEventListener('submit', function (e) {
@@ -238,6 +369,34 @@ $('destInput').addEventListener('input', function (e) { updateWaze(e.target.valu
   }
 })();
 
+$('fsBtn').addEventListener('click', toggleFullscreen);
+document.addEventListener('fullscreenchange', syncFsButton);
+document.addEventListener('webkitfullscreenchange', syncFsButton);
+
+$('setBtn').addEventListener('click', openSettings);
+$('settingsClose').addEventListener('click', closeSettings);
+$('keySave').addEventListener('click', saveKey);
+$('keyClear').addEventListener('click', clearKey);
+
+// Tap the dimmed backdrop (but not the card) to dismiss.
+$('settings').addEventListener('click', function (e) {
+  if (e.target === $('settings')) closeSettings();
+});
+
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && !$('settings').hidden) closeSettings();
+});
+
+/* --------------------------------------------------------------------------
+   SERVICE WORKER (app shell only — see sw.js)
+   Skipped on file://, where registration isn't allowed.
+   -------------------------------------------------------------------------- */
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* offline / unsupported */ });
+  });
+}
+
 /* --------------------------------------------------------------------------
    RESTORE LAST SESSION
    -------------------------------------------------------------------------- */
@@ -261,4 +420,8 @@ $('destInput').addEventListener('input', function (e) { updateWaze(e.target.valu
   if (sp) setSpotify(sp, false);
 
   showTab(load(KEY.tab, 'video') === 'music' ? 'music' : 'video');
+
+  // Only offer the fullscreen button where it can actually do something.
+  $('fsBtn').hidden = !(fsSupported() && !isStandalone());
+  syncFsButton();
 })();

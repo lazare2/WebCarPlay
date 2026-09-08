@@ -5,7 +5,9 @@ the right, so you're not switching apps at a red light.
 
 Plain HTML/CSS/JS. No build step, no dependencies — open `index.html` and it runs.
 
-## Phase 1 (done)
+Live: <https://lazare2.github.io/WebCarPlay/>
+
+## Phase 1 — dashboard
 
 - Landscape-first split layout, ~55/45, full viewport height, no scrolling
 - **Left** — Google Maps embed driven by a destination box
@@ -18,6 +20,36 @@ Plain HTML/CSS/JS. No build step, no dependencies — open `index.html` and it r
   `localStorage`
 - Portrait fallback: panels stack vertically and a "rotate your phone" banner appears
 
+## Phase 2 — PWA + fullscreen
+
+- `manifest.json` — standalone display, landscape orientation, theme colours
+- `apple-touch-icon` + `apple-mobile-web-app-capable` so the iOS home-screen
+  icon launches without Safari's address bar or tab bar
+- `sw.js` — service worker caching the app shell (HTML/CSS/JS/icons) only.
+  Cross-origin requests are deliberately untouched, so the map, YouTube and
+  Spotify iframes always hit the network.
+- Settings (gear icon) — stores your Google Maps API key in `localStorage`
+  instead of in source, so nothing sensitive lands in a public repo
+- Fullscreen button in the top bar
+
+### Fullscreen: what works where
+
+| Platform | Result |
+|---|---|
+| Android Chrome, desktop browsers, iPadOS Safari | Button works — true fullscreen |
+| **iPhone Safari** | **Button is hidden — iOS has no Fullscreen API for web pages** |
+
+On iPhone the equivalent is **Share → Add to Home Screen**, then launch from that
+icon: `apple-mobile-web-app-capable` makes it open standalone with no browser UI
+at all. The app detects standalone mode and hides the fullscreen button there too,
+since there's nothing left to hide.
+
+### Changing the app after deploy
+
+The service worker caches the shell. Page loads are network-first so a deploy
+shows up straight away, but if a CSS/JS change seems stuck, bump `CACHE_VERSION`
+in [`sw.js`](sw.js) — the old cache is dropped on activate.
+
 ## Google Maps API key
 
 Optional. Without one the map uses the keyless
@@ -28,12 +60,12 @@ For the real Maps Embed API:
 1. <https://console.cloud.google.com> — create or pick a project
 2. APIs & Services → Library → enable **Maps Embed API**
 3. APIs & Services → Credentials → Create credentials → API key
-4. Restrict it: Websites → your deploy domain (plus `http://localhost`), and
-   API restrictions → Maps Embed API only
-5. Paste it into `GOOGLE_MAPS_API_KEY` at the top of `app.js`
+4. Restrict it: Websites → `https://lazare2.github.io/*` (plus `http://localhost:*`),
+   and API restrictions → Maps Embed API only
+5. Paste it into the app's Settings panel
 
-A browser key is always visible in page source — the domain restriction is what
-protects it. Phase 2 moves the key into `localStorage` so it never enters the repo.
+A browser key is always visible to anyone using the page — the domain restriction
+is what protects it. Don't put it in `app.js`; the repo is public.
 
 ## Notes
 
@@ -44,6 +76,9 @@ protects it. Phase 2 moves the key into `localStorage` so it never enters the re
 
 ## Files
 
-    index.html   markup
-    style.css    layout + dark high-contrast theme
-    app.js       URL parsing, localStorage, tab switching
+    index.html     markup
+    style.css      layout + dark high-contrast theme
+    app.js         URL parsing, localStorage, tabs, fullscreen, settings
+    sw.js          app-shell service worker
+    manifest.json  PWA manifest
+    icon-*.png     app icons (generated, steering wheel mark)

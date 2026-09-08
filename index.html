@@ -6,6 +6,18 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0b0d10">
 <title>WebCarPlay</title>
+
+<!-- PWA / iOS home screen. apple-mobile-web-app-capable is what makes the
+     home-screen icon launch without Safari's address bar and tab bar;
+     mobile-web-app-capable is the modern equivalent for other browsers. -->
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WebCarPlay">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,9 +27,26 @@
 
   <header class="topbar">
     <div class="brand">Web<span>CarPlay</span></div>
+
     <a id="wazeBtn" class="btn btn-waze" href="https://waze.com/ul" target="_blank" rel="noopener">
       Navigate in Waze
     </a>
+
+    <button id="fsBtn" class="btn icon-btn" type="button" hidden
+            aria-label="Enter fullscreen" title="Fullscreen">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path class="fs-expand" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+        <path class="fs-collapse" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>
+      </svg>
+    </button>
+
+    <button id="setBtn" class="btn icon-btn" type="button"
+            aria-label="Settings" title="Settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="3.2"/>
+        <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/>
+      </svg>
+    </button>
   </header>
 
   <main class="deck">
@@ -79,6 +108,35 @@
     </section>
 
   </main>
+
+  <!-- ============ SETTINGS ============ -->
+  <div class="modal" id="settings" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-card">
+      <h2 class="modal-title" id="settingsTitle">Settings</h2>
+
+      <label class="modal-label" for="keyInput">Google Maps API key</label>
+      <input id="keyInput" class="field" type="text" autocomplete="off"
+             spellcheck="false" autocapitalize="off" placeholder="Optional — leave empty for the basic map">
+      <p class="note">
+        Stored only in this browser, never in the repo and never sent anywhere else.
+        Restrict the key in Google Cloud Console to this site's domain and to the
+        Maps Embed API.
+      </p>
+      <p class="status status-ok" id="keyStatus" aria-live="polite"></p>
+
+      <p class="note note-sep">
+        <strong>Fullscreen on iPhone:</strong> Safari on iPhone has no fullscreen
+        button for web pages. Tap Share &rarr; Add to Home Screen, then open
+        WebCarPlay from that icon &mdash; it launches with no address bar and no tabs.
+      </p>
+
+      <div class="modal-actions">
+        <button class="btn btn-go" id="keySave" type="button">Save</button>
+        <button class="btn" id="keyClear" type="button">Clear key</button>
+        <button class="btn" id="settingsClose" type="button">Close</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
